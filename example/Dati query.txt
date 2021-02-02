@@ -1,0 +1,6 @@
+bic_hotels
+
+STRING -> apertura
+STRING -> cancellazione
+INT -> bonus
+BOOL -> attivo
