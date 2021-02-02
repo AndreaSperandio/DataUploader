@@ -1,2 +1,2 @@
-# Strongifier
-Riceve un documento .xlsx con periodo di ID, APERTURA, POLICY degli alberghi. Genera un documento.xlsx con i testi tradotti e le query per inserirli online.
+# DataUploader
+Riceve un documento .xlsx con ID, COL1, ..., COLN dati da caricare sul database. Genera un documento.xlsx con le query per inserirli online in base a nome tabella, nome campo e tipo di dato.
