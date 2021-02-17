@@ -7,7 +7,7 @@ import view.component.DUComboBoxItem;
 
 public class Column {
 	public enum Type {
-		STRING(0), BOOL(1), INT(2);
+		STRING(0), BOOL(1), INT(2), DOUBLE(3);
 
 		private int value;
 
@@ -25,14 +25,18 @@ public class Column {
 			if (type == INT.value) {
 				return INT;
 			}
+			if (type == DOUBLE.value) {
+				return DOUBLE;
+			}
 			return STRING;
 		}
 
-		public static List<DUComboBoxItem<Type>> getRaceComboItems() {
+		public static List<DUComboBoxItem<Type>> getColumnComboItems() {
 			final List<DUComboBoxItem<Type>> l = new ArrayList<>();
 			l.add(new DUComboBoxItem<>(STRING, STRING.toString()));
 			l.add(new DUComboBoxItem<>(BOOL, BOOL.toString()));
 			l.add(new DUComboBoxItem<>(INT, INT.toString()));
+			l.add(new DUComboBoxItem<>(DOUBLE, DOUBLE.toString()));
 			return l;
 		}
 	}

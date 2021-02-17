@@ -39,6 +39,7 @@ public class MainView extends JFrame {
 	private static final String FILE_EXTENSION = ".xlsx";
 
 	private static final int DEFAULT_MAX_COLUMN_VIEW = 4;
+	private static final String DEFAULT_ID = "id";
 
 	private final JLabel lblInstruction = new JLabel(MainView.LOC.getRes("lblInstruction"));
 	private final JLabel lblDocument = new JLabel(MainView.LOC.getRes("lblDocument"));
@@ -46,6 +47,8 @@ public class MainView extends JFrame {
 	private final JLabel lblDocumentFile = new JLabel();
 	private final JLabel lblTable = new JLabel(MainView.LOC.getRes("lblTable"));
 	private final DUTextField txtTable = new DUTextField();
+	private final JLabel lblId = new JLabel(MainView.LOC.getRes("lblId"));
+	private final DUTextField txtId = new DUTextField();
 	private final DUButton btnTransform = new DUButton(DUResource.getStartImage());
 	private final JLabel lblTransform = new JLabel(MainView.LOC.getRes("lblTransform"));
 	private final JLabel lblExportPath = new JLabel(MainView.LOC.getRes("lblExportPath"));
@@ -104,6 +107,8 @@ public class MainView extends JFrame {
 		this.add(this.lblDocumentFile);
 		this.add(this.lblTable);
 		this.add(this.txtTable);
+		this.add(this.lblId);
+		this.add(this.txtId);
 		this.add(this.btnTransform);
 		this.add(this.lblTransform);
 		this.add(this.lblExportPath);
@@ -125,10 +130,12 @@ public class MainView extends JFrame {
 		this.btnDocument.setBounds(x, y, 100, height);
 		this.lblDocumentFile.setBounds(x + 120, y, 400, height);
 		y += 40;
-		this.lblTable.setBounds(x, y, 100, height);
-		this.txtTable.setBounds(130, y, 200, height);
+		this.lblTable.setBounds(x, y, 60, height);
+		this.txtTable.setBounds(80, y, 150, height);
+		this.lblId.setBounds(300, y, 20, height);
+		this.txtId.setBounds(330, y, 150, height);
 		this.yScrollColumns = y + 30;
-		y += 190; //TODO Leave space for pnlColums
+		y += 190;
 		this.btnTransform.setBounds(x, y, 35, height + 10);
 		this.lblTransform.setBounds(x + 45, y, 200, height + 10);
 		y += 70;
@@ -145,6 +152,7 @@ public class MainView extends JFrame {
 
 		this.lblDocument.setToolTipText(MainView.LOC.getRes("lblDocumentToolTip"));
 		this.lblTable.setToolTipText(MainView.LOC.getRes("lblTableToolTip"));
+		this.lblId.setToolTipText(MainView.LOC.getRes("lblIdToolTip"));
 		this.lblTransform.setToolTipText(MainView.LOC.getRes("lblTransformToolTip"));
 		this.lblExportPath.setToolTipText(MainView.LOC.getRes("lblExportPathToolTip"));
 
@@ -170,12 +178,14 @@ public class MainView extends JFrame {
 	}
 
 	private void init() {
+		this.txtId.setText(MainView.DEFAULT_ID);
 		this.updateGraphics();
 		this.setVisible(true);
 	}
 
 	private void updateGraphics() {
 		this.txtTable.setEnabled(this.documentFile != null);
+		this.txtId.setEnabled(this.documentFile != null);
 		for (final ColumnPanel columnPanel : this.columnPanels) {
 			columnPanel.setEnabled(this.documentFile != null);
 		}
@@ -278,6 +288,11 @@ public class MainView extends JFrame {
 
 			this.lblDocumentFile.setText(null);
 			this.lblExportFile.setText(null);
+			this.txtTable.setText(null);
+			this.txtId.setText(MainView.DEFAULT_ID);
+			for (final ColumnPanel columnPanel : this.columnPanels) {
+				columnPanel.clear();
+			}
 			this.documentFile = null;
 			this.exportFile = null;
 			this.importedRows = null;
@@ -294,6 +309,10 @@ public class MainView extends JFrame {
 
 		if (this.txtTable.isEmpty()) {
 			DUMessage.showErrDialog(this, MainView.LOC.getRes("errTable"));
+			return false;
+		}
+		if (this.txtId.isEmpty()) {
+			DUMessage.showErrDialog(this, MainView.LOC.getRes("errId"));
 			return false;
 		}
 		for (final ColumnPanel columnPanel : this.columnPanels) {
@@ -338,8 +357,8 @@ public class MainView extends JFrame {
 			return;
 		}
 
-		//TODO
-		if (_importedRows.get(0).getCells() == null || _importedRows.get(0).getCells().size() < 2) {
+		if (_importedRows.get(0).getCells() == null
+				|| _importedRows.get(0).getCells().size() < this.columnPanels.size() + 1) {
 			DUMessage.showErrDialog(this, MainView.LOC.getRes("errNotEnoughData"));
 			return;
 		}
@@ -375,7 +394,7 @@ public class MainView extends JFrame {
 				column = this.columnPanels.get(j - 1).getColumn();
 				String query = "UPDATE " + this.txtTable.getText() + " SET " + column.getName();
 				query += MainView.getUpdateClause(column, importedRow.getStringAt(j));
-				query += " WHERE id = " + id + ";";
+				query += " WHERE " + this.txtId.getText() + " = " + id + ";";
 
 				exportRow.addCell(importedRow.getStringAt(j));
 				exportRow.addCell(query);
@@ -395,9 +414,19 @@ public class MainView extends JFrame {
 
 		case BOOL:
 			return value == null || "".equals(value.toLowerCase()) || "false".equals(value.toLowerCase())
-					|| "no".equals(value.toLowerCase()) ? " = 0 " : " = 1 ";
+					|| "no".equals(value.toLowerCase()) || "0".equals(value) ? " = 0 " : " = 1 ";
 		case INT:
-			return value == null || !MainView.isNumeric(value) ? "" : " = " + Integer.parseInt(value);
+			return value == null || !MainView.isInteger(value) ? "" : " = " + Integer.parseInt(value);
+		case DOUBLE:
+			if (value != null) {
+				if ((value.contains(",") || value.contains(".")) && MainView.isDouble(value.replaceAll(",", "."))) {
+					return " = " + Double.parseDouble(value.replaceAll(",", "."));
+				} else if (MainView.isInteger(value)) {
+					return " = " + Integer.parseInt(value);
+				}
+				return "";
+			}
+			return "";
 		default:
 			return "";
 		}
@@ -420,13 +449,27 @@ public class MainView extends JFrame {
 		this.recalculateColumnPanels();
 	}
 
-	private static boolean isNumeric(final String string) {
+	private static boolean isInteger(final String string) {
 		if (string == null) {
 			return false;
 		}
 
 		try {
 			Integer.parseInt(string);
+			return true;
+		} catch (final NumberFormatException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	private static boolean isDouble(final String string) {
+		if (string == null) {
+			return false;
+		}
+
+		try {
+			Double.parseDouble(string);
 			return true;
 		} catch (final NumberFormatException e) {
 			e.printStackTrace();

@@ -65,7 +65,7 @@ public class ColumnPanel extends JPanel {
 	}
 
 	private void init() {
-		this.cmbType.addItems(Column.Type.getRaceComboItems());
+		this.cmbType.addItems(Column.Type.getColumnComboItems());
 		this.cmbType.setSelectedIndex(0);
 	}
 
