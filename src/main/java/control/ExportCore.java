@@ -22,7 +22,7 @@ public class ExportCore {
 	private static final DULocalizator LOC = new DULocalizator(ExportCore.class);
 
 	public static boolean doExport(final MainView parent, final String path, final String sheetName,
-			final List<ExportRow> exportRows) {
+			final List<ExportRow> exportRows, final String sheet2Name, final List<ExportRow> exportRows2) {
 
 		if (parent == null || sheetName == null || exportRows == null) {
 			return false;
@@ -46,6 +46,23 @@ public class ExportCore {
 
 				for (int i = 0; i < exportRows.get(0).getCells().size(); i++) {
 					sheet.autoSizeColumn(i);
+				}
+
+				if (sheet2Name != null && exportRows2 != null) {
+					final Sheet sheet2 = workbook.createSheet(sheet2Name);
+
+					sheet2.setMargin(Sheet.LeftMargin, 0.6);
+					sheet2.setMargin(Sheet.RightMargin, 0.6);
+					sheet2.setMargin(Sheet.TopMargin, 1);
+					sheet2.setMargin(Sheet.BottomMargin, 1);
+					sheet2.setMargin(Sheet.HeaderMargin, 0.5);
+					sheet2.setMargin(Sheet.FooterMargin, 0.5);
+
+					ExportCore.createBody(workbook, sheet2, exportRows2);
+
+					for (int i = 0; i < exportRows2.get(0).getCells().size(); i++) {
+						sheet2.autoSizeColumn(i);
+					}
 				}
 
 				workbook.write(fileOut);

@@ -66,8 +66,10 @@ public class MainView extends JFrame {
 	private File documentFile = null;
 	private File exportFile = null;
 
+	private String sheetName = null;
 	private List<ImportedRow> importedRows = null;
 	private List<ExportRow> exportRows = null;
+	private List<ExportRow> exportQueries = null;
 	private final List<ColumnPanel> columnPanels = new ArrayList<>();
 
 	public MainView() {
@@ -239,8 +241,10 @@ public class MainView extends JFrame {
 			File file = jfc.getSelectedFile();
 			if (caller == this.btnDocument) {
 				this.documentFile = file;
+				this.sheetName = null;
 				this.importedRows = null;
 				this.exportRows = null;
+				this.exportQueries = null;
 			} else {
 				if (!file.getName().endsWith(MainView.FILE_EXTENSION)) {
 					file = new File(file.getAbsolutePath() + MainView.FILE_EXTENSION);
@@ -251,8 +255,10 @@ public class MainView extends JFrame {
 		} else if (retVaule == JFileChooser.CANCEL_OPTION) {
 			if (caller == this.btnDocument) {
 				this.documentFile = null;
+				this.sheetName = null;
 				this.importedRows = null;
 				this.exportRows = null;
+				this.exportQueries = null;
 			} else {
 				this.exportFile = null;
 			}
@@ -276,7 +282,9 @@ public class MainView extends JFrame {
 			return;
 		}
 
-		if (ExportCore.doExport(this, this.exportFile.getAbsolutePath(), "Foglio 1", this.exportRows)) {
+		if (ExportCore.doExport(this, this.exportFile.getAbsolutePath(),
+				this.sheetName != null && !"".equals(this.sheetName) ? this.sheetName : "Foglio 1", this.exportRows,
+				"All queries", this.exportQueries)) {
 			if (DUMessage.showConfirmDialog(this, MainView.LOC.getRes("cnfExported"))) {
 				try {
 					Desktop.getDesktop().open(this.exportFile);
@@ -295,8 +303,10 @@ public class MainView extends JFrame {
 			}
 			this.documentFile = null;
 			this.exportFile = null;
+			this.sheetName = null;
 			this.importedRows = null;
 			this.exportRows = null;
+			this.exportQueries = null;
 			this.updateGraphics();
 		}
 	}
@@ -351,7 +361,7 @@ public class MainView extends JFrame {
 		return file.getName().endsWith(MainView.FILE_EXTENSION);
 	}
 
-	public void notifyImportCompleted(final List<ImportedRow> _importedRows) {
+	public void notifyImportCompleted(final String _sheetName, final List<ImportedRow> _importedRows) {
 		if (_importedRows == null || _importedRows.isEmpty()) {
 			DUMessage.showWarnDialog(this, MainView.LOC.getRes("wrnNoRowsFound"));
 			return;
@@ -363,6 +373,7 @@ public class MainView extends JFrame {
 			return;
 		}
 
+		this.sheetName = _sheetName;
 		this.importedRows = _importedRows;
 		this.importStrings();
 	}
@@ -375,7 +386,10 @@ public class MainView extends JFrame {
 		header.addCell(headerRow.getStringAt(0));
 		for (int j = 1; j < headerRow.getCells().size(); j++) { //Skip id (pos = 0)
 			header.addCell(headerRow.getStringAt(j));
-			header.addCell("Query");
+
+			if (this.columnPanels.size() > j - 1) {
+				header.addCell("Query");
+			}
 		}
 		_exportRows.add(header);
 
@@ -384,6 +398,8 @@ public class MainView extends JFrame {
 		ImportedRow importedRow;
 		ExportRow exportRow;
 		Column column;
+		final String[] perRowQueries = new String[this.columnPanels.size()];
+		final List<String> queries = new ArrayList<>();
 		for (int i = 1; i < this.importedRows.size(); i++) { //Ignore header
 			importedRow = this.importedRows.get(i);
 			id = importedRow.getStringAt(posId);
@@ -391,22 +407,43 @@ public class MainView extends JFrame {
 
 			exportRow.addCell(importedRow.getStringAt(posId));
 			for (int j = 1; j < importedRow.getCells().size(); j++) { //Skip id (pos = 0)
-				column = this.columnPanels.get(j - 1).getColumn();
-				String query = "UPDATE " + this.txtTable.getText() + " SET " + column.getName();
-				query += MainView.getUpdateClause(column, importedRow.getStringAt(j));
-				query += " WHERE " + this.txtId.getText() + " = " + id + ";";
+				if (this.columnPanels.size() > j - 1) {
+					column = this.columnPanels.get(j - 1).getColumn();
+					perRowQueries[j - 1] = column.getName()
+							+ MainView.getUpdateClause(column, importedRow.getStringAt(j));
 
-				exportRow.addCell(importedRow.getStringAt(j));
-				exportRow.addCell(query);
+					final String query = "UPDATE " + this.txtTable.getText() + " SET " + perRowQueries[j - 1]
+							+ " WHERE " + this.txtId.getText() + " = " + id + ";";
+					exportRow.addCell(importedRow.getStringAt(j));
+					exportRow.addCell(query);
+				} else {
+					exportRow.addCell(importedRow.getStringAt(j));
+				}
 			}
+
 			_exportRows.add(exportRow);
+
+			String query = "UPDATE " + this.txtTable.getText() + " SET ";
+			for (int j = 0; j < this.columnPanels.size(); j++) {
+				query += perRowQueries[j] + " AND ";
+			}
+			query = query.substring(0, query.length() - " AND ".length());
+			query += " WHERE " + this.txtId.getText() + " = " + id + ";";
+			queries.add(query);
+		}
+
+		final List<ExportRow> _exportQueries = new ArrayList<>();
+		for (final String query : queries) {
+			_exportQueries.add(new ExportRow().addCell(query));
 		}
 
 		DUMessage.showInfoDialog(this, MainView.LOC.getRes("infQueryCreated"));
 		this.exportRows = _exportRows;
+		this.exportQueries = _exportQueries;
 	}
 
-	private static String getUpdateClause(final Column column, final String value) {
+	private static String getUpdateClause(final Column column, final String _value) {
+		final String value = _value != null ? _value.trim() : _value;
 		switch (column.getType()) {
 		case STRING:
 			return value == null || "".equals(value) ? " = NULL "

@@ -85,7 +85,7 @@ public class ColumnPanel extends JPanel {
 	}
 
 	public Column getColumn() {
-		return new Column(this.cmbType.getSelectedItemKey(), this.txtName.getText());
+		return new Column(this.cmbType.getSelectedItemKey(), this.txtName.getText().trim());
 	}
 
 	public void clear() {

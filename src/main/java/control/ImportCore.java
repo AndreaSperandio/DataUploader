@@ -24,6 +24,7 @@ public class ImportCore {
 
 	public static void importRows(final MainView parent, final File importFile) {
 		final List<ImportedRow> importedRows = new ArrayList<>();
+		String sheetName = null;
 		try {
 			if (parent == null || importFile == null || !importFile.exists() || importFile.isDirectory()) {
 				return;
@@ -48,6 +49,7 @@ public class ImportCore {
 							importedRows.add(importedRow);
 						}
 					});
+					sheetName = sheet.getSheetName();
 				} catch (final EncryptedDocumentException e) {
 					DUMessage.showErrDialog(parent, ImportCore.LOC.getRes("errEncryptedDocument"));
 					e.printStackTrace();
@@ -60,7 +62,7 @@ public class ImportCore {
 				e.printStackTrace();
 			}
 		} finally {
-			parent.notifyImportCompleted(importedRows);
+			parent.notifyImportCompleted(sheetName, importedRows);
 		}
 	}
 }

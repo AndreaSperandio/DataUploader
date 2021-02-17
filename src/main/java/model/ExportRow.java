@@ -14,8 +14,9 @@ public class ExportRow {
 		this.cells = cells;
 	}
 
-	public void addCell(final String cell) {
+	public ExportRow addCell(final String cell) {
 		this.cells.add(cell);
+		return this;
 	}
 
 	public String getCellAt(final int index) {

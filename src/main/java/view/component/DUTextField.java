@@ -93,7 +93,7 @@ public class DUTextField extends JTextField {
 	public String getText() {
 		try {
 			final Document doc = this.getDocument();
-			return doc != null ? doc.getText(0, doc.getLength()) : null;
+			return doc != null ? doc.getText(0, doc.getLength()).trim() : null;
 		} catch (final BadLocationException e) {
 			e.printStackTrace();
 		}
