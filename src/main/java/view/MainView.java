@@ -425,9 +425,9 @@ public class MainView extends JFrame {
 
 			String query = "UPDATE " + this.txtTable.getText() + " SET ";
 			for (int j = 0; j < this.columnPanels.size(); j++) {
-				query += perRowQueries[j] + " AND ";
+				query += perRowQueries[j] + ", ";
 			}
-			query = query.substring(0, query.length() - " AND ".length());
+			query = query.substring(0, query.length() - ", ".length());
 			query += " WHERE " + this.txtId.getText() + " = " + id + ";";
 			queries.add(query);
 		}
